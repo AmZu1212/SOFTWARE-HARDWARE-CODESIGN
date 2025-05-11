@@ -1,0 +1,2 @@
+g++ -std=c++17 -O2 -mavx main_nbody.cpp -o ./program.exe
+./program.exe
