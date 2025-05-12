@@ -53,7 +53,8 @@
         "xmemory": "cpp",
         "xstring": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "complex": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

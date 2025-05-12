@@ -98,7 +98,7 @@ void MoveChunk(unsigned int start, unsigned int end)
             __m256 dz2 = _mm256_mul_ps(dz, dz);
             
             
-            // denominator calcs
+            // denominator calcs (this is dumb but refactor later)
             __m256 temp1 = _mm256_add_ps(dx2, softVector);
             __m256 temp2 = _mm256_add_ps(dy2, dz2);
             __m256 temp3 = _mm256_add_ps(temp1, temp2);

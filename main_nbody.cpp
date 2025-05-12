@@ -1,48 +1,73 @@
+/**************************************************
+ *                                                *
+ *   main for testing nbody serial and parallel   *
+ *                                                *
+ *               Written by:                      *
+ *            Amir Zuabi - 212606222              *
+ *             Nir Schif - 212980395              *
+ *                                                *
+ **************************************************/
+
+
+// Implementation Includes
 #include "nbody_parallel.hpp"
 #include "nbody_serial.hpp"
+
+// System Includes
 #include <iostream>
 #include <sys/time.h>
 #include <vector>
 #include <algorithm>
 #include <cmath>
 
+// namespaces and signatures
 using namespace std;
+void TestMultipleSteps(int maxSteps);
 
-/*************************************************
- *
- *   main for testing nbody serial and parallel
- *
- *               Written by:
- *            Amir Zuabi - 212606222
- *             Nir Schif - 212980395
- *
- **************************************************/
 
+// Global Particle Arrays
 OneParticle serialParticles[nParticles];
 OneParticle parallelParticles[nParticles];
+
+
+
 
 // Validate that serial and parallel results match
 bool ValidateParticles()
 {
-    bool ret = true;
-    const float epsilon = 0.1f;
+    // some value to ignore small floatign point errors
+    const float error = 0.1f;
+
+    // loop over all the particles
     for (int i = 0; i < nParticles; i++)
     {
-        OneParticle p = serialParticles[i];
-        OneParticle p1 = parallelParticles[i];
-        bool isEqual = fabs(p.x - p1.x) >= epsilon || fabs(p.y - p1.y) >= epsilon || fabs(p.z - p1.z) >= epsilon;
-        if (isEqual)
+        // get particle pair
+        OneParticle serialP = serialParticles[i];
+        OneParticle parallelP = parallelParticles[i];
+
+        // calc deltas
+        const float dx = fabs(serialP.x - parallelP.x);
+        const float dy = fabs(serialP.y - parallelP.y);
+        const float dz = fabs(serialP.z - parallelP.z);
+
+        // Check Margains
+        if (dx >= error || dy >= error || dz >= error)
         {
-            cout << "Mismatch at index " << i << ": dx=" << p.x - p1.x << " dy=" << p.y - p1.y << " dz=" << p.z - p1.z << endl;
-            ret = false;
-            return ret;
+            //print error
+            cout << "Mismatch at index " << i << ": dx=" << dx << " dy=" << dy << " dz=" << dz << endl;
+            
+            // mismatch found, bad.
+            return false;
         }
     }
-    return ret;
+    
+    // no mismatch found, good.
+    return true;
 }
 
-// Configuration for benchmarking
-const int nSteps = 10;
+// performance metrics, improve this later.
+// Configuration for benchmarking, make sure nsteps - skipsteps is an ODD number.
+/*const int nSteps = 10;
 const int skipSteps = 3;
 double final_performance[2] = {1, 1};
 
@@ -106,50 +131,94 @@ void RunSimulation(int mode)
          << endl;
 
     final_performance[mode] = median;
-}
+}*/
 
 int main()
 {
     cout << "\nPropagating " << nParticles << " particles using serial implementation on CPU\n"
          << endl;
-    InitParticleSerial();
-    RunSimulation(0);
-
-    // Copy serial result for validation
-    for (int i = 0; i < nParticles; i++)
-    {
-        GetParticleSerial(i, &serialParticles[i]);
-    }
-
-    cout << "\n\nPropagating " << nParticles << " particles using parallel threads on CPU\n"
-         << endl;
-    
-
-    //StartThreads(InitChunk);
-    RunSimulation(1);
-
-    // Copy parallel result for validation
-    for (int i = 0; i < nParticles; i++)
-    {
-        OneParticle p;
-        p.x = global_X[i];
-        p.y = global_Y[i];
-        p.z = global_Z[i];
-        p.vx = global_Vx[i];
-        p.vy = global_Vy[i];
-        p.vz = global_Vz[i];
-        parallelParticles[i] = p;
-    }
-
-    if (ValidateParticles())
-    {
-        cout << "Validation successful!" << endl;
-        cout << "Speedup: " << final_performance[0] / final_performance[1] << "x" << endl;
-    }
-    else
-    {
-        cout << "Validation failed. Results mismatch!" << endl;
-    }
+    TestMultipleSteps(10);
 
     return 0;
 }
+
+
+/**
+ * @brief Performs a step-by-step comparison between Serial and Parallel N-Body implementations.
+ *
+ * This function initializes both the Serial and Parallel particle states to the same
+ * starting configuration. It then runs both implementations side by side for the specified
+ * number of steps, comparing their results after each step and printing mismatches if any.
+ *
+ * @param maxSteps The number of simulation steps to perform and validate.
+ */
+void TestMultipleSteps(int maxSteps)
+{
+    cout << "\n--- Multi-Step Comparison (" << maxSteps << " steps) ---\n" << endl;
+
+    // Reinitialize particles to the same starting state
+    InitParticleSerial();
+    for (int i = 0; i < nParticles; i++)
+    {
+        // Copy serial particles to global arrays for parallel to start with the same state
+        global_X[i] = serialParticles[i].x;
+        global_Y[i] = serialParticles[i].y;
+        global_Z[i] = serialParticles[i].z;
+        global_Vx[i] = serialParticles[i].vx;
+        global_Vy[i] = serialParticles[i].vy;
+        global_Vz[i] = serialParticles[i].vz;
+    }
+
+    for (int step = 1; step <= maxSteps; ++step)
+    {
+        cout << "\n--- Step " << step << " ---\n";
+
+        // Serial step
+        MoveParticlesSerial();
+        for (int i = 0; i < nParticles; i++)
+        {
+            GetParticleSerial(i, &serialParticles[i]);
+        }
+
+        // Parallel step: InitChunk only on step 1
+        if (step == 1)
+        {
+            StartThreads(InitChunk);
+        }
+
+        StartThreads(MoveChunk);
+        StartThreads(UpdateChunkPosition);
+
+        for (int i = 0; i < nParticles; i++)
+        {
+            parallelParticles[i].x = global_X[i];
+            parallelParticles[i].y = global_Y[i];
+            parallelParticles[i].z = global_Z[i];
+            parallelParticles[i].vx = global_Vx[i];
+            parallelParticles[i].vy = global_Vy[i];
+            parallelParticles[i].vz = global_Vz[i];
+        }
+
+        // Print first 15 particles
+        /*for (int i = 0; i < 15; i++)
+        {
+            cout << "Particle " << i << ":"
+                 << " Serial(x=" << serialParticles[i].x << ", y=" << serialParticles[i].y << ", z=" << serialParticles[i].z << ")"
+                 << " | Parallel(x=" << parallelParticles[i].x << ", y=" << parallelParticles[i].y << ", z=" << parallelParticles[i].z << ")\n";
+        }*/
+
+        // Validate and report
+        if (ValidateParticles())
+        {
+            cout << "Validation successful for step " << step << "!" << endl;
+        }
+        else
+        {
+            cout << "Validation failed at step " << step << ". Results mismatch!" << endl;
+            break;  // Stop on first failure
+        }
+    }
+}
+
+
+
