@@ -137,19 +137,70 @@ int main()
 {
     cout << "\nPropagating " << nParticles << " particles using serial implementation on CPU\n"
          << endl;
-    TestMultipleSteps(10);
+    //TestMultipleSteps(5);
+    int maxSteps = 5;
+
+
+
+    InitParticleSerial();
+    for (int i = 0; i < nParticles; i++)
+    {
+        // Copy serial particles to global arrays for parallel to start with the same state
+        global_X[i] = serialParticles[i].x;
+        global_Y[i] = serialParticles[i].y;
+        global_Z[i] = serialParticles[i].z;
+        global_Vx[i] = serialParticles[i].vx;
+        global_Vy[i] = serialParticles[i].vy;
+        global_Vz[i] = serialParticles[i].vz;
+    }
+
+    for (int step = 1; step <= maxSteps; ++step)
+    {
+        cout << "\n--- Serial Step " << step << " ---\n";
+
+        // Serial step
+        MoveParticlesSerial();
+    }
+
+
+    for (int step = 1; step <= maxSteps; ++step)
+    {
+        cout << "\n--- Parallel Step " << step << " ---\n";
+        // Parallel step
+        StartThreads(MoveChunk);
+        StartThreads(UpdateChunkPosition);
+
+        for (int i = 0; i < nParticles; i++)
+        {
+            parallelParticles[i].x = global_X[i];
+            parallelParticles[i].y = global_Y[i];
+            parallelParticles[i].z = global_Z[i];
+            parallelParticles[i].vx = global_Vx[i];
+            parallelParticles[i].vy = global_Vy[i];
+            parallelParticles[i].vz = global_Vz[i];
+        }
+    }
+
+    if (ValidateParticles())
+    {
+        cout << "Validation successful for step!" << endl;
+    }
+    else
+    {
+        cout << "Validation failed at step. Results mismatch!" << endl;
+    }
 
     return 0;
 }
 
 
 /**
- * @brief Performs a step-by-step comparison between Serial and Parallel N-Body implementations.
+ * @brief Performs a step-by-stmentations side by side for the specified
+ * number of steps, comparing their results after each step and printing mismatches if any.
+ *ep comparison between Serial and Parallel N-Body implementations.
  *
  * This function initializes both the Serial and Parallel particle states to the same
- * starting configuration. It then runs both implementations side by side for the specified
- * number of steps, comparing their results after each step and printing mismatches if any.
- *
+ * starting configuration. It then runs both imple
  * @param maxSteps The number of simulation steps to perform and validate.
  */
 void TestMultipleSteps(int maxSteps)
@@ -175,17 +226,8 @@ void TestMultipleSteps(int maxSteps)
 
         // Serial step
         MoveParticlesSerial();
-        for (int i = 0; i < nParticles; i++)
-        {
-            GetParticleSerial(i, &serialParticles[i]);
-        }
 
-        // Parallel step: InitChunk only on step 1
-        if (step == 1)
-        {
-            StartThreads(InitChunk);
-        }
-
+        // Parallel step
         StartThreads(MoveChunk);
         StartThreads(UpdateChunkPosition);
 
