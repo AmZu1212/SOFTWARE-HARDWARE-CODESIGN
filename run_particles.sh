@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Written by Amir Zuabi & Nir Schif
+# Written by Amir Zuabi & Nir Schif & chatGPT
 # This script cleans, builds, runs, and validates the N-body simulations.
 
 # this is the simulation step count parameter. by default it is 5.
