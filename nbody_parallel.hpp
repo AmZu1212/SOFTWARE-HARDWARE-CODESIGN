@@ -8,7 +8,7 @@ using namespace std;
 // Written by: Amir Zuabi - 212606222
 //             Nir Schif  - 212980395
 
-//      Note: this code runs 30x faster than the original, due to cache optimization, vectorization (AVX2) and multi-threading.
+//      Note: this code runs 56x faster than the original, due to cache optimization, vectorization (AVX2) and multi-threading.
 
 //      Note: __m256 needs to be supported to run this (AVX2)
 
@@ -31,6 +31,8 @@ typedef struct
 #endif 
 
 // Note: notice how we moved from a particle array to coords arrays, in order to improve cache locality.
+
+// This is a SoA - Struct of Arrays, which allows us to better utilize cache locality during vectorization
 // Global arrays for particle positions and velocities
 float global_X[nParticles];
 float global_Y[nParticles];

@@ -19,6 +19,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <chrono>  // <-- Timer
 
 // namespaces and signatures
 using namespace std;
@@ -65,82 +66,14 @@ bool ValidateParticles()
     return true;
 }
 
-// performance metrics, improve this later.
-// Configuration for benchmarking, make sure nsteps - skipsteps is an ODD number.
-/*const int nSteps = 10;
-const int skipSteps = 3;
-double final_performance[2] = {1, 1};
-
-// Timing utility
-typedef struct timeval tval;
-double GetElapsed(tval start, tval end)
-{
-    return (double)(end.tv_sec - start.tv_sec) * 1000.0 + (double)(end.tv_usec - start.tv_usec) / 1000.0;
-}
-
-// Runs a simulation and reports performance stats
-void RunSimulation(int mode)
-{ // mode 0: serial, mode 1: parallel
-    double rate = 0;
-    double total_time = 0;
-    vector<double> times;
-
-    cout << "Step\tTime(ms)\tInteract/s" << endl;
-
-    for (int step = 1; step <= nSteps; step++)
-    {
-        tval start, end;
-        gettimeofday(&start, NULL);
-
-        if (mode == 0)
-        {
-            MoveParticlesSerial();
-        }
-        else
-        {
-            StartThreads(InitChunk);
-            StartThreads(MoveChunk);
-            StartThreads(UpdateChunkPosition);
-        }
-
-        gettimeofday(&end, NULL);
-
-        const double interactions = static_cast<double>(nParticles) * (nParticles - 1);
-        double time_ms = GetElapsed(start, end);
-
-        if (step > skipSteps)
-        {
-            rate += (interactions / time_ms);
-            total_time += time_ms;
-            times.push_back(time_ms);
-        }
-
-        cout.precision(4);
-        cout << step << "\t" << time_ms << "\t\t" << 1000 * interactions / time_ms << (step <= skipSteps ? "  *" : "") << endl;
-    }
-
-    sort(times.begin(), times.end());
-    double median = times[times.size() / 2];
-    double average = total_time / (nSteps - skipSteps);
-
-    cout << "\n"
-         << (mode == 0 ? "Serial" : "Parallel") << " performance summary:"
-         << " Average(ms): " << average << " Median(ms): " << median << " Rate: " << rate << endl;
-    cout << "-----------------------------------------------------" << endl;
-    cout << "* - Warm-up, not included in average\n"
-         << endl;
-
-    final_performance[mode] = median;
-}*/
 
 int main()
 {
-    cout << "\nPropagating " << nParticles << " particles using serial implementation on CPU\n"
-         << endl;
-    //TestMultipleSteps(5);
+    cout << "\nPropagating " << nParticles << " particles using serial implementation on CPU\n" << endl;
+
     int maxSteps = 5;
-
-
+    int threadCount = thread::hardware_concurrency();
+    cout << "\nThread Count: " << threadCount << endl;
 
     InitParticleSerial();
     for (int i = 0; i < nParticles; i++)
@@ -154,21 +87,33 @@ int main()
         global_Vz[i] = serialParticles[i].vz;
     }
 
+    // Serial steps with timing
     for (int step = 1; step <= maxSteps; ++step)
     {
         cout << "\n--- Serial Step " << step << " ---\n";
 
-        // Serial step
+        auto start = std::chrono::high_resolution_clock::now();
+
         MoveParticlesSerial();
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        cout << "Serial step time: " << duration << " ms" << endl;
     }
 
-
+    // Parallel steps with timing
     for (int step = 1; step <= maxSteps; ++step)
     {
         cout << "\n--- Parallel Step " << step << " ---\n";
-        // Parallel step
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         StartThreads(MoveChunk);
         StartThreads(UpdateChunkPosition);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        cout << "Parallel step time: " << duration << " ms" << endl;
 
         for (int i = 0; i < nParticles; i++)
         {
@@ -261,6 +206,3 @@ void TestMultipleSteps(int maxSteps)
         }
     }
 }
-
-
-

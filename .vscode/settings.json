@@ -54,7 +54,23 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xutility": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "chrono": "cpp",
+        "cstdarg": "cpp",
+        "cwctype": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "functional": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "string_view": "cpp",
+        "fstream": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "cinttypes": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
