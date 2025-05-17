@@ -4,7 +4,7 @@
 # This script cleans, builds, runs, and validates the N-body simulations.
 
 # this is the simulation step count parameter. by default it is 5.
-STEPS=2
+STEPS=10
 
 # toggle flamegraph generation
 GENERATE_FLAMEGRAPH=TRUE
