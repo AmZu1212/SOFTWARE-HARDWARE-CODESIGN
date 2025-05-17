@@ -23,4 +23,4 @@ cache.exe: cache_trasher.cpp
 
 # Clean rule
 clean:
-	rm -f $(TARGETS)
+	rm -f $(TARGETS) parallel_result.txt serial_result.txt
