@@ -1,0 +1,9 @@
+#!/bin/sh
+'''exec' "/root/SOFTWARE-HARDWARE-CODESIGN/Project Files/venv/cpython3.10-01e0476c9c69-compat-af96b9431081/bin/python" "$0" "$@"
+' '''
+import sys
+from pyperf.__main__ import main
+if __name__ == '__main__':
+    if sys.argv[0].endswith('.exe'):
+        sys.argv[0] = sys.argv[0][:-4]
+    sys.exit(main())
