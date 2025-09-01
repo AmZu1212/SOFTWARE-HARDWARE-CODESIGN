@@ -2,51 +2,69 @@
 
 set -e  # Exit on error
 
-# please note, that running through this script will slow down the overall results, 
-# but the 6x speedup stays the same. (in some cases, instability is introduced due to the script)
+# Authored by Amir Zuabi & Nir Schif
 
-# also dont forget that you need to manual change the USE_ORJSON flag in the run_benchmark.py.
-# (we tried to automate this for yo uguys, but pyperformance didnt allow us to use flags. so 
-# each run you'll need to toggle True/False for the improved library in the python file.)
+
+# make sure you update the directory which your flamegraph is installed at, and the directory where the pyperformance benchmarks are located. 
+# usually in: /usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/
+# for python 3.X you'll need to change the number obviously.
+
+
+# this scirpt runs both versions of the benchmark, json std and json orjson. 
+# makes the flamegraphs for you, and outputs the perfs in the perf outputs folder.
+
+# to see the stats in the console liek we showcased in out project document, we used this line. 
+# unfortunately you cannot create a Flamegraph and showcase these stats at the same time, 
+# so we left it out of the script. you can use this command and some editing of this script to make it appear, 
+# or just do it manually with your prefered version (json/orjson) and see the stats :)
+
+
+# perf stat -e cycles,instructions,branches,branch-misses,cache-misses \
+#     -- python3-dbg -m pyperformance run --bench json_dumps
 
 
 # === Config ===
 WORKDIR="$(pwd)"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-SVG_OUT="bm_json_dumps_flame_$TIMESTAMP.svg"
+ASSETDIR="$WORKDIR/Helper Assets"
+FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
+PERFOUTDIR="$WORKDIR/Perf Outputs"
+TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
+BENCH_FILE="/usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/run_benchmark.py"
 
-# === Set benchmark path manually ===
-BENCH_TARGET_DIR="/usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps"
-TARGET_PY="$BENCH_TARGET_DIR/run_benchmark.py"
-SOURCE_PY="$WORKDIR/run_benchmark.py"
+# === Create output directories if missing ===
+mkdir -p "$FLAMEOUTDIR"
+mkdir -p "$PERFOUTDIR"
 
-# === Overwrite the Python file ===
-if [ -f "$SOURCE_PY" ]; then
-    echo "[*] Copying custom run_benchmark.py to: $TARGET_PY"
-    cp "$SOURCE_PY" "$TARGET_PY"
-else
-    echo "[✘] Source run_benchmark.py not found at: $SOURCE_PY"
-    exit 1
-fi
+# === Function to run one benchmark pass ===
+run_benchmark_pass() {
+    local SRC_SCRIPT="$1"
+    local VARIANT_LABEL="$2"  # e.g., "std" or "orjson"
 
-# === Run perf ===
-echo "[*] Running perf on benchmark 'bm_json_dumps'..."
-perf record -F 999 -g -- python3-dbg -m pyperformance run --bench json_dumps
+    echo "[*] Copying $SRC_SCRIPT → $BENCH_FILE"
+    cp "$SRC_SCRIPT" "$BENCH_FILE"
 
+    echo "[*] Running perf on 'json_dumps ($VARIANT_LABEL)'..."
+    perf record -F 999 -g -o "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" -- python3-dbg -m pyperformance run --bench json_dumps
 
-echo "[*] Generating out.perf..."
-perf script > out.perf
+    echo "[*] Generating out.perf..."
+    perf script -i "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" > "$PERFOUTDIR/out_${VARIANT_LABEL}.perf"
 
-echo "[*] Moving to Flamegraph directory..."
-pushd "$FLAMEDIR" > /dev/null
+    echo "[*] Moving to Flamegraph directory..."
+    pushd "$FLAMEDIR" > /dev/null
 
-echo "[*] Collapsing stacks..."
-./stackcollapse-perf.pl "$WORKDIR/out.perf" > "$WORKDIR/out.folded"
+    echo "[*] Collapsing stacks..."
+    ./stackcollapse-perf.pl "$PERFOUTDIR/out_${VARIANT_LABEL}.perf" > "$PERFOUTDIR/out_${VARIANT_LABEL}.folded"
 
-echo "[*] Generating flamegraph..."
-./flamegraph.pl "$WORKDIR/out.folded" > "$WORKDIR/$SVG_OUT"
+    local SVG_NAME="json_dumps_${VARIANT_LABEL}_$TIMESTAMP.svg"
+    echo "[*] Generating flamegraph → $SVG_NAME"
+    ./flamegraph.pl "$PERFOUTDIR/out_${VARIANT_LABEL}.folded" > "$FLAMEOUTDIR/$SVG_NAME"
 
-echo "[✔] Done! Flamegraph saved as: $WORKDIR/$SVG_OUT"
+    echo "[✔] Flamegraph saved: $FLAMEOUTDIR/$SVG_NAME"
 
-popd > /dev/null
+    popd > /dev/null
+}
+
+# === Run both versions ===
+run_benchmark_pass "$ASSETDIR/json.py" "std"
+run_benchmark_pass "$ASSETDIR/orjson.py" "orjson"

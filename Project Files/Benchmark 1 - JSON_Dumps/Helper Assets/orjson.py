@@ -1,0 +1,81 @@
+import sys
+import pyperf
+
+
+# please note, the benchmark does not run this file, but it is original one. 
+# this is a copy for the ease of reading the changes.
+
+# also you will need to manually override the benchmark file in py performance with 
+# the code here for this to run. we couldn't automate it cleanly.
+
+# put it in:
+# /usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/run_benchmark.py
+
+# run with False - for standard library
+# run with True - for Orjson library (Faster)
+
+USE_ORJSON = True
+
+if USE_ORJSON:
+    import orjson
+    def dumps(obj):
+        return orjson.dumps(obj).decode('utf-8')
+else:
+    import json
+    def dumps(obj):
+        return json.dumps(obj)
+
+
+EMPTY = ({}, 2000)
+SIMPLE_DATA = {'key1': 0, 'key2': True, 'key3': 'value', 'key4': 'foo',
+               'key5': 'string'}
+SIMPLE = (SIMPLE_DATA, 1000)
+NESTED_DATA = {'key1': 0, 'key2': SIMPLE[0], 'key3': 'value', 'key4': SIMPLE[0],
+               'key5': SIMPLE[0], 'key': '\u0105\u0107\u017c'}
+NESTED = (NESTED_DATA, 1000)
+HUGE = ([NESTED[0]] * 1000, 1)
+ 
+CASES = ['EMPTY', 'SIMPLE', 'NESTED', 'HUGE']
+
+
+def bench_json_dumps(data):
+    for obj, count_it in data:
+        for _ in count_it:
+            dumps(obj)
+
+
+def add_cmdline_args(cmd, args):
+    if args.cases:
+        cmd.extend(("--cases", args.cases))
+
+
+def main():
+    runner = pyperf.Runner(add_cmdline_args=add_cmdline_args)
+    runner.argparser.add_argument("--cases",
+                                  help="Comma separated list of cases. Available cases: %s. By default, run all cases."
+                                       % ', '.join(CASES))
+    runner.metadata['description'] = "Benchmark json.dumps()"
+
+    args = runner.parse_args()
+    if args.cases:
+        cases = []
+        for case in args.cases.split(','):
+            case = case.strip()
+            if case:
+                cases.append(case)
+        if not cases:
+            print("ERROR: empty list of cases")
+            sys.exit(1)
+    else:
+        cases = CASES
+
+    data = []
+    for case in cases:
+        obj, count = globals()[case]
+        data.append((obj, range(count)))
+
+    runner.bench_func('json_dumps', bench_json_dumps, data)
+
+
+if __name__ == '__main__':
+    main()
