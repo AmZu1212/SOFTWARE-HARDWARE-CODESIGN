@@ -11,7 +11,7 @@ set -e  # Exit on error
 # === Config ===
 WORKDIR="$(pwd)"
 BENCH_NAME="crypto_pyaes"
-FLAMEOUTDIR="$WORKDIR/FlameGraphs Outputs"
+FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
 PERFOUTDIR="$WORKDIR/Perf Outputs"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
