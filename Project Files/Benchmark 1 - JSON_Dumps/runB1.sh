@@ -19,8 +19,7 @@ set -e  # Exit on error
 # or just do it manually with your prefered version (json/orjson) and see the stats :)
 
 
-# perf stat -e cycles,instructions,branches,branch-misses,cache-misses \
-#     -- python3-dbg -m pyperformance run --bench json_dumps
+# perf stat -e cycles,instructions,branches,branch-misses,cache-misses -- python3-dbg -m pyperformance run --bench json_dumps
 
 
 # === Config ===
