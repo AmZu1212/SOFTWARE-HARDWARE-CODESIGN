@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Authored by Amir Zuabi & Nir Schif
+# Authored by Amir Zuabi & Nir Schif & GPT
 
 WORKDIR="$(pwd)"
 ASSETDIR="$WORKDIR/Helper Assets"
@@ -11,6 +11,11 @@ TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
 BENCH_NAME="crypto_pyaes"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
+ku
+# Toggle: when true → run perf stat (prints to terminal) instead of flamegraphs
+SHOW_STATS=${SHOW_STATS:-true}
+# perf stat events (comma-separated, no spaces)
+PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-misses,context-switches,cpu-migrations,task-clock}
 
 # === STATIC pyperformance paths ===
 PY_PERF_ROOT="/usr/local/lib/python3.10/dist-packages/pyperformance"
@@ -51,6 +56,13 @@ run_benchmark_pass() {
     cp "$BACKUP_REQ" "$REQ_FILE"
   fi
 
+  if [[ "$SHOW_STATS" == "true" ]]; then
+    echo "[*] perf stat ($VARIANT)..."
+    perf stat -e "$PERF_EVENTS" -- "$PYTHON_BIN" -m pyperformance run --bench "$BENCH_NAME"
+    echo "[✔] perf stat completed for '$VARIANT'"
+    return
+  fi
+
   echo "[*] perf record ($VARIANT)..."
   perf record -F 999 -g \
     -o "$PERFOUTDIR/perf_${BENCH_NAME}_${VARIANT}.data" \
@@ -62,13 +74,22 @@ run_benchmark_pass() {
 
   echo "[*] FlameGraph ($VARIANT)"
   pushd "$FLAMEDIR" >/dev/null
+
+  # Correct path (no braces bug)
+  if [[ ! -f "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf" ]]; then
+    echo "[!] Missing perf script output: $PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf"
+    popd >/dev/null
+    exit 1
+  fi
+
   ./stackcollapse-perf.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf" \
     > "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded"
+
   local SVG_NAME="${BENCH_NAME}_${VARIANT}_$TIMESTAMP.svg"
   ./flamegraph.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded" \
     > "$FLAMEOUTDIR/$SVG_NAME"
-  popd >/dev/null
 
+  popd >/dev/null
   echo "[✔] Flamegraph saved: $FLAMEOUTDIR/$SVG_NAME"
 }
 
@@ -76,4 +97,4 @@ run_benchmark_pass() {
 run_benchmark_pass "$ASSETDIR/original_crypto_pyaes.py" "orig"
 run_benchmark_pass "$ASSETDIR/new_crypto_pyaes.py"      "new"
 
-echo "[✔] Done. Perf data in '$PERFOUTDIR', SVGs in '$FLAMEOUTDIR'."
+echo "[✔] Done. Perf data in '$PERFOUTDIR', SVGs in '$FLAMEOUTDIR' (unless SHOW_STATS=true)."

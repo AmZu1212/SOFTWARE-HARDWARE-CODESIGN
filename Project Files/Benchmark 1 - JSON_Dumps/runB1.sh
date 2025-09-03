@@ -2,7 +2,7 @@
 
 set -e  # Exit on error
 
-# Authored by Amir Zuabi & Nir Schif
+# Authored by Amir Zuabi & Nir Schif & GPT5
 
 
 # make sure you update the directory which your flamegraph is installed at, and the directory where the pyperformance benchmarks are located.
