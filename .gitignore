@@ -5,4 +5,6 @@ Project Files/Benchmark 1 - JSON_Dumps/venv/
 # Ignore perf data outputs
 Project Files/Benchmark 2 - Crypto_PyAES/Perf Outputs/
 Project Files/Benchmark 1 - JSON_Dumps/Perf Outputs/
+
+#ignore vscode configs
 .vscode/

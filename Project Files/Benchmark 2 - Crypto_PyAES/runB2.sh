@@ -11,9 +11,10 @@ TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
 BENCH_NAME="crypto_pyaes"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
-ku
+
+# === User config ===
 # Toggle: when true → run perf stat (prints to terminal) instead of flamegraphs
-SHOW_STATS=${SHOW_STATS:-true}
+SHOW_STATS=${SHOW_STATS:-false}
 # perf stat events (comma-separated, no spaces)
 PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-misses,context-switches,cpu-migrations,task-clock}
 
@@ -85,9 +86,15 @@ run_benchmark_pass() {
   ./stackcollapse-perf.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf" \
     > "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded"
 
-  local SVG_NAME="${BENCH_NAME}_${VARIANT}_$TIMESTAMP.svg"
+  if [[ "$VARIANT" == "orig" ]]; then
+    SVG_NAME="Original_PyAES_${TIMESTAMP}.svg"
+  else
+    SVG_NAME="New_PyAES_${TIMESTAMP}.svg"
+  fi
+
   ./flamegraph.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded" \
-    > "$FLAMEOUTDIR/$SVG_NAME"
+  > "$FLAMEOUTDIR/$SVG_NAME"
+
 
   popd >/dev/null
   echo "[✔] Flamegraph saved: $FLAMEOUTDIR/$SVG_NAME"
