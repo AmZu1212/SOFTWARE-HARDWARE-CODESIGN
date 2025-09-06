@@ -22,6 +22,7 @@ RESULTSOUTDIR="$WORKDIR/Results"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
 BENCH_FILE="/usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/run_benchmark.py"
+JSON_REQ_FILE="$(dirname "$BENCH_FILE")/requirements.txt"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
 
 # Toggle: when true → run perf stat (clean results) instead of flamegraphs
@@ -32,9 +33,40 @@ PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-miss
 # === Create output directories if missing ===
 mkdir -p "$FLAMEOUTDIR" "$PERFOUTDIR" "$RESULTSOUTDIR"
 
+# --- Backups so we leave the install clean on exit ---
+BACKUP_BENCH="${BENCH_FILE}.backup.$TIMESTAMP"
+BACKUP_REQ="${JSON_REQ_FILE}.backup.$TIMESTAMP"
+
+# Some pyperformance builds ship without requirements.txt; handle that.
+if [[ -f "$BENCH_FILE" ]]; then
+  cp "$BENCH_FILE" "$BACKUP_BENCH"
+else
+  echo "[!] Benchmark file not found at: $BENCH_FILE"
+  exit 1
+fi
+
+if [[ -f "$JSON_REQ_FILE" ]]; then
+  cp "$JSON_REQ_FILE" "$BACKUP_REQ"
+else
+  # create an empty backup to restore to "no extra requirements"
+  touch "$BACKUP_REQ"
+fi
+
+restore_original() {
+  echo "[*] Restoring original json_dumps benchmark + requirements..."
+  cp "$BACKUP_BENCH" "$BENCH_FILE" || true
+  if [[ -s "$BACKUP_REQ" ]]; then
+    cp "$BACKUP_REQ"  "$JSON_REQ_FILE" || true
+  else
+    # original had no requirements file
+    rm -f "$JSON_REQ_FILE" || true
+  fi
+}
+trap restore_original EXIT
+
 # === Function to run one benchmark pass ===
 run_benchmark_pass() {
-    local SRC_SCRIPT="$1"         # path to variant source
+    local SRC_SCRIPT="$1"         # path to variant source (json.py / orjson.py)
     local VARIANT_LABEL="$2"      # "std" or "orjson"
 
     if [[ ! -f "$SRC_SCRIPT" ]]; then
@@ -44,6 +76,19 @@ run_benchmark_pass() {
 
     echo "[*] Copying $SRC_SCRIPT → $BENCH_FILE"
     cp "$SRC_SCRIPT" "$BENCH_FILE"
+
+    # For the orjson variant, force pyperformance to install orjson in its venv
+    if [[ "$VARIANT_LABEL" == "orjson" ]]; then
+        echo "[*] Setting requirements for orjson variant"
+        printf "orjson>=3.9.0\n" > "$JSON_REQ_FILE"
+    else
+        echo "[*] Restoring requirements for std variant"
+        if [[ -s "$BACKUP_REQ" ]]; then
+          cp "$BACKUP_REQ" "$JSON_REQ_FILE"
+        else
+          rm -f "$JSON_REQ_FILE" || true
+        fi
+    fi
 
     if [[ "$SHOW_STATS" == "true" ]]; then
         # Stats mode: single perf stat run; capture the mean line + full perf summary.
@@ -77,7 +122,8 @@ run_benchmark_pass() {
 
     # Flamegraph mode
     echo "[*] Running perf on 'json_dumps ($VARIANT_LABEL)'..."
-    perf record -F 999 -g -o "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" -- "$PYTHON_BIN" -m pyperformance run --bench json_dumps
+    perf record -F 999 -g -o "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" -- \
+      "$PYTHON_BIN" -m pyperformance run --bench json_dumps
 
     echo "[*] Generating out.perf..."
     perf script -i "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" > "$PERFOUTDIR/out_${VARIANT_LABEL}.perf"
