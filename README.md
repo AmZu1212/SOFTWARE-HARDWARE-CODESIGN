@@ -6,7 +6,11 @@
 
 # Python Performance Benchmarking Project
 
-This project evaluates two Python benchmarks from the [pyperformance](https://github.com/python/pyperformance) suite:
+This project evaluates two Python benchmarks from the [pyperformance](https://github.com/python/pyperformance).
+
+Please refer to the to the Report.pdf in the repository to see the thoughtprocess & explanations.
+
+Suite:
 
 - **`json_dumps`**: Compares the standard Python `json` library against the optimized [`orjson`](https://github.com/ijl/orjson) library.
 - **`crypto_pyaes`**: Compares a pure-Python AES-CTR implementation (`pyaes`) with the [cryptography](https://cryptography.io/) library, which uses OpenSSL and hardware AES-NI instructions.
@@ -15,7 +19,6 @@ We used **Linux perf** to capture performance data and generate either:
 - **FlameGraphs** for visual profiling  
 - **Perf stats** for cycle counts, branch misses, cache misses, etc.  
 
-Please refer to the to the Report.pdf in the repository to see the thoughtprocess & explanations.
 ---
 
 ## ⚠️ Disclaimer
