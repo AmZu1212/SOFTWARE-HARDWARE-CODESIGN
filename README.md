@@ -46,14 +46,14 @@ Before running them, make sure that:
 ```
 Project Files/
 ├── Benchmark 1 - JSON_Dumps/
-│   ├── runB1.sh                  # Script for json_dumps benchmark
+│   ├── script_json_dumps.sh                  # Script for json_dumps benchmark
 │   ├── Helper Assets/            # Contains json.py and orjson.py benchmark variants
 │   ├── Perf Outputs/             # perf.data, .perf, .folded
 │   ├── FlameGraph Outputs/       # FlameGraph SVGs
 │   └── Results/                  # Clean perf stats results (if SHOW_STATS=true)
 │
 └── Benchmark 2 - Crypto_PyAES/
-    ├── runB2.sh                  # Script for crypto_pyaes benchmark
+    ├── script_crypto_pyaes.sh                  # Script for crypto_pyaes benchmark
     ├── Helper Assets/            # Contains original_crypto_pyaes.py and new_crypto_pyaes.py
     ├── Perf Outputs/
     ├── FlameGraph Outputs/
@@ -72,10 +72,10 @@ Each benchmark has its own folder:
 
 ```bash
 cd "Project Files/Benchmark 1 - JSON_Dumps"
-./runB1.sh
+./script_json_dumps.sh
 
 cd "Project Files/Benchmark 2 - Crypto_PyAES"
-./runB2.sh
+./script_crypto_pyaes.sh
 ```
 
 - Runs the benchmark under `perf record`
@@ -86,10 +86,10 @@ cd "Project Files/Benchmark 2 - Crypto_PyAES"
 
 ```bash
 cd "Project Files/Benchmark 1 - JSON_Dumps"
-SHOW_STATS=true ./runB1.sh
+SHOW_STATS=true ./script_json_dumps.sh
 
 cd "Project Files/Benchmark 2 - Crypto_PyAES"
-SHOW_STATS=true ./runB2.sh
+SHOW_STATS=true ./script_crypto_pyaes.sh
 ```
 
 - Runs the benchmark under `perf stat`
