@@ -8,7 +8,7 @@
 
 This project evaluates two Python benchmarks from the [pyperformance](https://github.com/python/pyperformance).
 
-Please refer to the to the Report.pdf in the repository to see the thoughtprocess & explanations.
+Please refer to the to the `Report.pdf` in the repository to see the thoughtprocess & explanations.
 
 Suite:
 
