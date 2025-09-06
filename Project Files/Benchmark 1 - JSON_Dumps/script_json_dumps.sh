@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "[!] Please read the GitHub instructions before use"
+
 # Authored by Amir Zuabi & Nir Schif & GPT5
 
 # This script runs both versions of the json_dumps benchmark (stdlib json vs orjson),
@@ -157,8 +159,8 @@ run_benchmark_pass() {
 }
 
 # === Run both versions ===
-run_benchmark_pass "$ASSETDIR/json.py" "std"
-run_benchmark_pass "$ASSETDIR/orjson.py" "orjson"
+run_benchmark_pass "$ASSETDIR/original_json_dumps.py" "std"
+run_benchmark_pass "$ASSETDIR/new_json_dumps.py" "orjson"
 
 if [[ "$SHOW_STATS" == "true" ]]; then
   echo "[✔] Done. Clean results saved in '$RESULTSOUTDIR'."

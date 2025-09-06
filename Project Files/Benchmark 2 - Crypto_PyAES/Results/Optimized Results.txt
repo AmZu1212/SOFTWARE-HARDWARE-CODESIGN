@@ -1,19 +1,19 @@
-crypto_pyaes: Mean +- std dev: 98.0 us +- 4.8 us
+crypto_pyaes: Mean +- std dev: 98.4 us +- 3.1 us
 
  Performance counter stats for 'python3-dbg -m pyperformance run --bench crypto_pyaes':
 
-       42334822552      cycles                    #    2.569 GHz                    
-       60691839734      instructions              #    1.43  insn per cycle         
-       13856186436      branches                  #  840.683 M/sec                  
-         185577171      branch-misses             #    1.34% of all branches        
-           5059418      cache-misses                                                
-              2974      context-switches          #  180.439 /sec                   
+       64591463510      cycles                    #    2.575 GHz                    
+       93083069461      instructions              #    1.44  insn per cycle         
+       20548330891      branches                  #  819.102 M/sec                  
+         246125504      branch-misses             #    1.20% of all branches        
+           4528103      cache-misses                                                
+              3511      context-switches          #  139.956 /sec                   
                  0      cpu-migrations            #    0.000 /sec                   
-          16482.06 msec task-clock                #    0.979 CPUs utilized          
+          25086.43 msec task-clock                #    0.982 CPUs utilized          
 
-      16.831946896 seconds time elapsed
+      25.551550207 seconds time elapsed
 
-      15.879871000 seconds user
-       0.632559000 seconds sys
+      24.484895000 seconds user
+       0.638447000 seconds sys
 
 

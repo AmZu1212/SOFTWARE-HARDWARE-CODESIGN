@@ -2,18 +2,18 @@ json_dumps: Mean +- std dev: 10.8 ms +- 0.3 ms
 
  Performance counter stats for 'python3-dbg -m pyperformance run --bench json_dumps':
 
-       57763145592      cycles                    #    2.577 GHz                    
-      120343611546      instructions              #    2.08  insn per cycle         
-       32141304698      branches                  #    1.434 G/sec                  
-         209816800      branch-misses             #    0.65% of all branches        
-           5034727      cache-misses                                                
-              3326      context-switches          #  148.386 /sec                   
+       58359037925      cycles                    #    2.578 GHz                    
+      120363168873      instructions              #    2.06  insn per cycle         
+       32137793046      branches                  #    1.420 G/sec                  
+         209584646      branch-misses             #    0.65% of all branches        
+           3621015      cache-misses                                                
+              3339      context-switches          #  147.489 /sec                   
                  0      cpu-migrations            #    0.000 /sec                   
-          22414.56 msec task-clock                #    0.974 CPUs utilized          
+          22638.94 msec task-clock                #    0.987 CPUs utilized          
 
-      23.014385128 seconds time elapsed
+      22.936953303 seconds time elapsed
 
-      21.571415000 seconds user
-       0.879040000 seconds sys
+      21.804353000 seconds user
+       0.869426000 seconds sys
 
 

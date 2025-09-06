@@ -3,6 +3,8 @@ set -euo pipefail
 
 # Authored by Amir Zuabi & Nir Schif & GPT
 
+echo "[!] Please read the GitHub instructions before use"
+
 WORKDIR="$(pwd)"
 ASSETDIR="$WORKDIR/Helper Assets"
 FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
