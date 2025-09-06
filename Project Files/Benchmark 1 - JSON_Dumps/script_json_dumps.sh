@@ -20,7 +20,21 @@ FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
 PERFOUTDIR="$WORKDIR/Perf Outputs"
 RESULTSOUTDIR="$WORKDIR/Results"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-FLAMEDIR="../../../FlameGraph"
+
+# Ensure FlameGraph repo exists one level up
+if [[ ! -d "$WORKDIR/../FlameGraph" ]]; then
+  echo "[*] Cloning FlameGraph into $(realpath "$WORKDIR/..") ..."
+  (
+    cd "$WORKDIR/.." \
+    && git clone https://github.com/brendangregg/FlameGraph.git
+  )
+else
+  echo "[*] FlameGraph already present at $WORKDIR/../FlameGraph"
+fi
+
+# Update FLAMEDIR path
+FLAMEDIR="$WORKDIR/../FlameGraph"
+
 BENCH_FILE="/usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/run_benchmark.py"
 JSON_REQ_FILE="$(dirname "$BENCH_FILE")/requirements.txt"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"

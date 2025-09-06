@@ -9,7 +9,22 @@ FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
 PERFOUTDIR="$WORKDIR/Perf Outputs"
 RESULTSOUTDIR="$WORKDIR/Results"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-FLAMEDIR="../../../FlameGraph"
+
+# Ensure FlameGraph repo exists one level up
+if [[ ! -d "$WORKDIR/../FlameGraph" ]]; then
+  echo "[*] Cloning FlameGraph into $(realpath "$WORKDIR/..") ..."
+  (
+    cd "$WORKDIR/.." \
+    && git clone https://github.com/brendangregg/FlameGraph.git
+  )
+else
+  echo "[*] FlameGraph already present at $WORKDIR/../FlameGraph"
+fi
+
+# Update FLAMEDIR path
+FLAMEDIR="$WORKDIR/../FlameGraph"
+
+
 BENCH_NAME="crypto_pyaes"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
 

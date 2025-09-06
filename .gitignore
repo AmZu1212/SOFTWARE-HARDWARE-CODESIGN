@@ -8,3 +8,4 @@ Project Files/Benchmark 1 - JSON_Dumps/Perf Outputs/
 
 #ignore vscode configs
 .vscode/
+FlameGraph/
