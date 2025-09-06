@@ -25,11 +25,18 @@ Before running them, make sure that:
 - You have installed all requirements (Python 3.10+, pyperformance, Linux `perf`, FlameGraph).  
 - You double-check the **paths to the benchmark files** (e.g., `run_benchmark.py` inside pyperformance).  
 - You update the paths if your system uses a different Python version or installation directory.  
-- Running as root or with elevated privileges is **your responsibility** — required for `perf` to access low-level CPU counters.  
-
-We (the authors) are **not responsible** if you break your local Python environment by misusing the scripts.  
+- Running as root or with elevated privileges is **your responsibility** — required for `perf` to access low-level CPU counters.
 
 ---
+
+## Requirements
+
+- Python 3.10+ with [pyperformance](https://github.com/python/pyperformance) installed
+- [Linux perf](https://perf.wiki.kernel.org/)  
+- [FlameGraph](https://github.com/brendangregg/FlameGraph) toolkit cloned and available
+
+---
+
 ## Repository Structure
 
 ```
@@ -102,13 +109,19 @@ SHOW_STATS=true ./runB2.sh
 
 ---
 
-## Requirements
+## Results
 
-- Python 3.10+ with [pyperformance](https://github.com/python/pyperformance) installed
-- [Linux perf](https://perf.wiki.kernel.org/)  
-- [FlameGraph](https://github.com/brendangregg/FlameGraph) toolkit cloned and available
+- **json_dumps**  
+  - The optimized library **orjson** showed significantly lower execution time compared to Python’s built-in `json`.  
+  - Gains are due to **SIMD vectorization** and low-level C optimizations.  
 
----
+- **crypto_pyaes**  
+  - The pure-Python AES implementation (**pyaes**) averaged ~600 ms per run.  
+  - The optimized version using **cryptography** (OpenSSL + AES-NI) averaged ~100 µs per run.  
+  - This demonstrates the dramatic performance benefit of using **hardware acceleration (AES-NI)**.  
+  - For extremely high-throughput scenarios, a dedicated accelerator (e.g., **FPGA**) could be used, but CPUs with AES-NI already provide excellent **latency**.  
+
+**Conclusion:** Optimized libraries that leverage native code and hardware features (SIMD, AES-NI) offer orders of magnitude performance improvements over pure-Python implementations.
 
 ## Notes
 
