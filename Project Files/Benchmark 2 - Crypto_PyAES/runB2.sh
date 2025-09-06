@@ -7,14 +7,15 @@ WORKDIR="$(pwd)"
 ASSETDIR="$WORKDIR/Helper Assets"
 FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
 PERFOUTDIR="$WORKDIR/Perf Outputs"
+RESULTSOUTDIR="$WORKDIR/Results"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
 BENCH_NAME="crypto_pyaes"
 PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
 
 # === User config ===
-# Toggle: when true → run perf stat (prints to terminal) instead of flamegraphs
-SHOW_STATS=${SHOW_STATS:-false}
+# true → run perf stat and save clean results (mean + perf summary) instead of flamegraphs
+SHOW_STATS=${SHOW_STATS:-true}
 # perf stat events (comma-separated, no spaces)
 PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-misses,context-switches,cpu-migrations,task-clock}
 
@@ -24,7 +25,7 @@ BENCH_DIR="$PY_PERF_ROOT/data-files/benchmarks/bm_crypto_pyaes"
 BENCH_FILE="$BENCH_DIR/run_benchmark.py"
 REQ_FILE="$BENCH_DIR/requirements.txt"
 
-mkdir -p "$FLAMEOUTDIR" "$PERFOUTDIR"
+mkdir -p "$FLAMEOUTDIR" "$PERFOUTDIR" "$RESULTSOUTDIR"
 
 # --- Backups so we leave the install clean on exit ---
 BACKUP_BENCH="${BENCH_FILE}.backup.$TIMESTAMP"
@@ -59,8 +60,32 @@ run_benchmark_pass() {
 
   if [[ "$SHOW_STATS" == "true" ]]; then
     echo "[*] perf stat ($VARIANT)..."
-    perf stat -e "$PERF_EVENTS" -- "$PYTHON_BIN" -m pyperformance run --bench "$BENCH_NAME"
-    echo "[✔] perf stat completed for '$VARIANT'"
+    if [[ "$VARIANT" == "orig" ]]; then
+      OUTFILE="$RESULTSOUTDIR/Normal Results.txt"
+    else
+      OUTFILE="$RESULTSOUTDIR/Optimized Results.txt"
+    fi
+
+    # One run: extract the mean line and the full perf summary.
+    #  - Strip ANSI codes to avoid matching issues.
+    #  - Correctly match the literal "+-" in "Mean +- std dev".
+    perf stat -e "$PERF_EVENTS" \
+      -- "$PYTHON_BIN" -m pyperformance run --bench "$BENCH_NAME" \
+      2>&1 \
+      | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' \
+      | awk '
+          /^[[:space:]]*crypto_pyaes: Mean \+\- std dev:/ { mean=$0; next }
+          /^ *Performance counter stats/ {
+              if (!printed_mean && mean != "") { print mean "\n"; printed_mean=1 }
+              inperf=1; print; next
+          }
+          inperf { print; next }
+          END {
+              if (!printed_mean && mean != "") { print mean }
+          }
+        ' | tee "$OUTFILE"
+
+    echo "[✔] Clean results saved: $OUTFILE"
     return
   fi
 
@@ -76,13 +101,6 @@ run_benchmark_pass() {
   echo "[*] FlameGraph ($VARIANT)"
   pushd "$FLAMEDIR" >/dev/null
 
-  # Correct path (no braces bug)
-  if [[ ! -f "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf" ]]; then
-    echo "[!] Missing perf script output: $PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf"
-    popd >/dev/null
-    exit 1
-  fi
-
   ./stackcollapse-perf.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.perf" \
     > "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded"
 
@@ -93,8 +111,7 @@ run_benchmark_pass() {
   fi
 
   ./flamegraph.pl "$PERFOUTDIR/out_${BENCH_NAME}_${VARIANT}.folded" \
-  > "$FLAMEOUTDIR/$SVG_NAME"
-
+    > "$FLAMEOUTDIR/$SVG_NAME"
 
   popd >/dev/null
   echo "[✔] Flamegraph saved: $FLAMEOUTDIR/$SVG_NAME"
@@ -104,4 +121,8 @@ run_benchmark_pass() {
 run_benchmark_pass "$ASSETDIR/original_crypto_pyaes.py" "orig"
 run_benchmark_pass "$ASSETDIR/new_crypto_pyaes.py"      "new"
 
-echo "[✔] Done. Perf data in '$PERFOUTDIR', SVGs in '$FLAMEOUTDIR' (unless SHOW_STATS=true)."
+if [[ "$SHOW_STATS" == "true" ]]; then
+  echo "[✔] Done. Clean results saved in '$RESULTSOUTDIR'."
+else
+  echo "[✔] Done. Perf data in '$PERFOUTDIR', SVGs in '$FLAMEOUTDIR'."
+fi
