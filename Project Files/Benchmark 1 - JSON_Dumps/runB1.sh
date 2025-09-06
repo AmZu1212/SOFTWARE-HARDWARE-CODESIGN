@@ -1,50 +1,83 @@
 #!/bin/bash
-
-set -e  # Exit on error
+set -euo pipefail
 
 # Authored by Amir Zuabi & Nir Schif & GPT5
 
-
-# make sure you update the directory which your flamegraph is installed at, and the directory where the pyperformance benchmarks are located.
-# usually in: /usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/
-# for python 3.X you'll need to change the number obviously.
-
-
-# this script runs both versions of the benchmark, json std and json orjson.
-# makes the flamegraphs for you, and outputs the perfs in the perf outputs folder.
-
-# to see the stats in the console liek we showcased in out project document, we used this line.
-# unfortunately you cannot create a Flamegraph and showcase these stats at the same time,
-# so we left it out of the script. you can use this command and some editing of this script to make it appear,
-# or just do it manually with your prefered version (json/orjson) and see the stats :)
-
-
-# perf stat -e cycles,instructions,branches,branch-misses,cache-misses -- python3-dbg -m pyperformance run --bench json_dumps
-
+# This script runs both versions of the json_dumps benchmark (stdlib json vs orjson),
+# and either:
+#   - Generates flamegraphs (default), or
+#   - Runs perf stat and saves clean results (when SHOW_STATS=true).
+#
+# Output:
+#   Flamegraphs → FlameGraph Outputs/
+#   Perf data   → Perf Outputs/
+#   Clean stats → Results/  ("Normal Results.txt" for std, "Optimized Results.txt" for orjson)
 
 # === Config ===
 WORKDIR="$(pwd)"
 ASSETDIR="$WORKDIR/Helper Assets"
 FLAMEOUTDIR="$WORKDIR/FlameGraph Outputs"
 PERFOUTDIR="$WORKDIR/Perf Outputs"
+RESULTSOUTDIR="$WORKDIR/Results"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 FLAMEDIR="../../../FlameGraph"
 BENCH_FILE="/usr/local/lib/python3.10/dist-packages/pyperformance/data-files/benchmarks/bm_json_dumps/run_benchmark.py"
+PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
+
+# Toggle: when true → run perf stat (clean results) instead of flamegraphs
+SHOW_STATS=${SHOW_STATS:-true}
+# perf stat events (comma-separated, no spaces)
+PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-misses,context-switches,cpu-migrations,task-clock}
 
 # === Create output directories if missing ===
-mkdir -p "$FLAMEOUTDIR"
-mkdir -p "$PERFOUTDIR"
+mkdir -p "$FLAMEOUTDIR" "$PERFOUTDIR" "$RESULTSOUTDIR"
 
 # === Function to run one benchmark pass ===
 run_benchmark_pass() {
-    local SRC_SCRIPT="$1"
-    local VARIANT_LABEL="$2"  # e.g., "std" or "orjson"
+    local SRC_SCRIPT="$1"         # path to variant source
+    local VARIANT_LABEL="$2"      # "std" or "orjson"
+
+    if [[ ! -f "$SRC_SCRIPT" ]]; then
+        echo "[!] Missing variant source: $SRC_SCRIPT"
+        exit 1
+    fi
 
     echo "[*] Copying $SRC_SCRIPT → $BENCH_FILE"
     cp "$SRC_SCRIPT" "$BENCH_FILE"
 
+    if [[ "$SHOW_STATS" == "true" ]]; then
+        # Stats mode: single perf stat run; capture the mean line + full perf summary.
+        local OUTFILE
+        if [[ "$VARIANT_LABEL" == "std" ]]; then
+            OUTFILE="$RESULTSOUTDIR/Normal Results.txt"
+        else
+            OUTFILE="$RESULTSOUTDIR/Optimized Results.txt"
+        fi
+
+        echo "[*] perf stat (json_dumps - $VARIANT_LABEL) → $OUTFILE"
+        perf stat -e "$PERF_EVENTS" \
+          -- "$PYTHON_BIN" -m pyperformance run --bench json_dumps \
+          2>&1 \
+          | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' \
+          | awk '
+              /^[[:space:]]*json_dumps: Mean \+\- std dev:/ { mean=$0; next }
+              /^ *Performance counter stats/ {
+                  if (!printed_mean && mean != "") { print mean "\n"; printed_mean=1 }
+                  inperf=1; print; next
+              }
+              inperf { print; next }
+              END {
+                  if (!printed_mean && mean != "") { print mean }
+              }
+            ' | tee "$OUTFILE"
+
+        echo "[✔] Saved clean stats: $OUTFILE"
+        return
+    fi
+
+    # Flamegraph mode
     echo "[*] Running perf on 'json_dumps ($VARIANT_LABEL)'..."
-    perf record -F 999 -g -o "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" -- python3-dbg -m pyperformance run --bench json_dumps
+    perf record -F 999 -g -o "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" -- "$PYTHON_BIN" -m pyperformance run --bench json_dumps
 
     echo "[*] Generating out.perf..."
     perf script -i "$PERFOUTDIR/perf_${VARIANT_LABEL}.data" > "$PERFOUTDIR/out_${VARIANT_LABEL}.perf"
@@ -60,10 +93,15 @@ run_benchmark_pass() {
     ./flamegraph.pl "$PERFOUTDIR/out_${VARIANT_LABEL}.folded" > "$FLAMEOUTDIR/$SVG_NAME"
 
     echo "[✔] Flamegraph saved: $FLAMEOUTDIR/$SVG_NAME"
-
     popd > /dev/null
 }
 
 # === Run both versions ===
 run_benchmark_pass "$ASSETDIR/json.py" "std"
 run_benchmark_pass "$ASSETDIR/orjson.py" "orjson"
+
+if [[ "$SHOW_STATS" == "true" ]]; then
+  echo "[✔] Done. Clean results saved in '$RESULTSOUTDIR'."
+else
+  echo "[✔] Done. Perf data in '$PERFOUTDIR', SVGs in '$FLAMEOUTDIR'."
+fi
