@@ -44,10 +44,10 @@ Each benchmark has its own folder:
 ### 1. Default mode: Generate FlameGraphs
 
 ```bash
-cd "Project Files/Benchmark 1-JSON_Dumps"
+cd "Project Files/Benchmark 1 - JSON_Dumps"
 ./runB1.sh
 
-cd "Project Files/Benchmark 2-Crypto_PyAES"
+cd "Project Files/Benchmark 2 - Crypto_PyAES"
 ./runB2.sh
 ```
 
@@ -78,7 +78,7 @@ SHOW_STATS=true ./runB2.sh
 
 ### json_dumps (standard vs orjson)
 - `Normal Results.txt` → standard Python `json.dumps`
-- `Optimized Results.txt` → `orjson.dumps` with SIMD acceleration
+- `Optimized Results.txt` → `orjson.dumps` with SIMD acceleration (compiler)
 
 ### crypto_pyaes (pyaes vs cryptography)
 - `Normal Results.txt` → pure Python AES (pyaes)
@@ -106,6 +106,3 @@ SHOW_STATS=true ./runB2.sh
 
 - Amir Zuabi  
 - Nir Schif  
-
-
-
