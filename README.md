@@ -17,8 +17,20 @@ We used **Linux perf** to capture performance data and generate either:
 
 ---
 
-## Repository Structure
+## ⚠️ Disclaimer
 
+These scripts are designed for use with the **pyperformance** benchmark suite.  
+Before running them, make sure that:
+
+- You have installed all requirements (Python 3.10+, pyperformance, Linux `perf`, FlameGraph).  
+- You double-check the **paths to the benchmark files** (e.g., `run_benchmark.py` inside pyperformance).  
+- You update the paths if your system uses a different Python version or installation directory.  
+- Running as root or with elevated privileges is **your responsibility** — required for `perf` to access low-level CPU counters.  
+
+We (the authors) are **not responsible** if you break your local Python environment by misusing the scripts.  
+
+---
+## Repository Structure
 
 ```
 Project Files/
