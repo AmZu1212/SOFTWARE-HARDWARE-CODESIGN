@@ -15,6 +15,7 @@ We used **Linux perf** to capture performance data and generate either:
 - **FlameGraphs** for visual profiling  
 - **Perf stats** for cycle counts, branch misses, cache misses, etc.  
 
+Please refer to the to the Report.pdf in the repository to see the thoughtprocess & explanations.
 ---
 
 ## ⚠️ Disclaimer
