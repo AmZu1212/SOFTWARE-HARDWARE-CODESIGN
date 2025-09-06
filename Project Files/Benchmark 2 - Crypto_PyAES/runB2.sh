@@ -15,7 +15,7 @@ PYTHON_BIN="${PYTHON_BIN:-python3-dbg}"
 
 # === User config ===
 # true → run perf stat and save clean results (mean + perf summary) instead of flamegraphs
-SHOW_STATS=${SHOW_STATS:-true}
+SHOW_STATS=${SHOW_STATS:-false}
 # perf stat events (comma-separated, no spaces)
 PERF_EVENTS=${PERF_EVENTS:-cycles,instructions,branches,branch-misses,cache-misses,context-switches,cpu-migrations,task-clock}
 
