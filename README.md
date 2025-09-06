@@ -16,8 +16,9 @@ We used **Linux perf** to capture performance data and generate either:
 
 ## Repository Structure
 
+
 ```
-.
+Project Files/
 ├── Benchmark 1 - JSON_Dumps/
 │   ├── runB1.sh                  # Script for json_dumps benchmark
 │   ├── Helper Assets/            # Contains json.py and orjson.py benchmark variants
@@ -25,12 +26,12 @@ We used **Linux perf** to capture performance data and generate either:
 │   ├── FlameGraph Outputs/       # FlameGraph SVGs
 │   └── Results/                  # Clean perf stats results (if SHOW_STATS=true)
 │
-├── Benchmark 2 - Crypto_PyAES/
-│   ├── runB2.sh                  # Script for crypto_pyaes benchmark
-│   ├── Helper Assets/            # Contains original_crypto_pyaes.py and new_crypto_pyaes.py
-│   ├── Perf Outputs/
-│   ├── FlameGraph Outputs/
-│   └── Results/
+└── Benchmark 2 - Crypto_PyAES/
+    ├── runB2.sh                  # Script for crypto_pyaes benchmark
+    ├── Helper Assets/            # Contains original_crypto_pyaes.py and new_crypto_pyaes.py
+    ├── Perf Outputs/
+    ├── FlameGraph Outputs/
+    └── Results/
 ```
 ---
 
