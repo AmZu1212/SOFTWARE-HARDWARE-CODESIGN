@@ -1,5 +1,8 @@
 # SOFTWARE-HARDWARE-CODESIGN
-Software-Hardware co-design HW
+
+*Software-Hardware co-design HW*  
+*Note: The `N-Body Files` folder is a midterm warm-up project and can be ignored.*
+
 
 # Python Performance Benchmarking Project
 
