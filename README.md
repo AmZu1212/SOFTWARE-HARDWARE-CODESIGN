@@ -118,16 +118,17 @@ SHOW_STATS=true ./script_crypto_pyaes.sh
 
 ## Results
 
--   **json_dumps**
+- **json_dumps**
+  - We used **orjson**, which is implemented in **Rust** and compiled with **LLVM**.
+  - It delivered **significantly lower execution time** than Python’s built-in `json`.
+  - The speedup comes from **SIMD-aware code paths** and **low-level optimizations** enabled by Rust/LLVM (aggressive inlining, autovectorization, cache-friendly data paths).
 
-    -   The optimized library **orjson** showed significantly lower execution time compared to Python’s built-in `json`.
-    -   Gains are due to **SIMD vectorization** and low-level C optimizations.
+- **crypto_pyaes**
+  - The pure-Python AES (**pyaes**) averaged ~600 ms per run.
+  - The optimized path using **cryptography** (OpenSSL + **AES-NI**) averaged ~100 µs per run.
+  - This highlights the impact of **hardware acceleration (AES-NI)**.
+  - For extreme throughput, a dedicated accelerator (e.g., **FPGA**) could be considered, but CPUs with AES-NI already offer excellent **latency**.
 
--   **crypto_pyaes**
-    -   The pure-Python AES implementation (**pyaes**) averaged ~600 ms per run.
-    -   The optimized version using **cryptography** (OpenSSL + AES-NI) averaged ~100 µs per run.
-    -   This demonstrates the dramatic performance benefit of using **hardware acceleration (AES-NI)**.
-    -   For extremely high-throughput scenarios, a dedicated accelerator (e.g., **FPGA**) could be used, but CPUs with AES-NI already provide excellent **latency**.
 
 **Conclusion:** Optimized libraries that leverage native code and hardware features (SIMD, AES-NI) offer orders of magnitude performance improvements over pure-Python implementations.
 
